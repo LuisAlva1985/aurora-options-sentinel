@@ -1,0 +1,19 @@
+{
+  "schema_version": "aurora.options-sentinel.competition.v1",
+  "mode": "paper",
+  "state": "PREPARATION_ONLY",
+  "underlying": "SPY",
+  "starting_equity_usd": "100000",
+  "max_premium_per_trade_usd": "500",
+  "max_daily_loss_usd": "1000",
+  "max_open_risk_usd": "1500",
+  "max_orders_per_day": 4,
+  "min_days_to_expiry": 2,
+  "max_days_to_expiry": 14,
+  "max_bid_ask_spread_pct": "0.15",
+  "minimum_confidence": "0.65",
+  "order_type": "limit",
+  "time_in_force": "day",
+  "live_trading_allowed": false,
+  "credentials_in_repository": false
+}
