@@ -1,0 +1,16 @@
+{
+  "schema_version": "aurora.alpaca-fees.v1",
+  "effective_as_of": "2026-07-20",
+  "source_url": "https://files.alpaca.markets/disclosures/library/BrokFeeSched.pdf",
+  "commission_note": "Retail self-directed accounts are generally commission-free; partner or Elite arrangements can differ.",
+  "options": {
+    "commission_rate_default": "0",
+    "sec_sell_rate_on_trade_value": "0.0000206",
+    "taf_sell_per_contract": "0.00329",
+    "cat_per_equivalent_share": "0.000003",
+    "orf_per_contract": "0.015",
+    "occ_per_contract": "0.025",
+    "contract_multiplier": 100,
+    "rounding": "Each fee type is aggregated daily per account and rounded up to $0.01."
+  }
+}

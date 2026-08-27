@@ -1,0 +1,27 @@
+{
+  "schema_version": "aurora.market-sample.v1",
+  "purpose": "read-only competition fixture; not a trading recommendation",
+  "captured_at": "2026-08-26T20:45:00Z",
+  "source": "Alpaca plugin",
+  "underlying": {
+    "symbol": "SPY",
+    "feed": "iex",
+    "quote_timestamp": "2026-08-26T19:59:59.949713Z",
+    "bid": "765.73",
+    "ask": "765.98",
+    "spread_pct": "0.00032643"
+  },
+  "options": {
+    "feed": "indicative",
+    "expiration": "2026-08-28",
+    "contract_multiplier": 100,
+    "quotes": [
+      {"symbol": "SPY260828C00764000", "right": "CALL", "strike": "764", "bid": "4.69", "ask": "4.76", "spread_pct": "0.01481481", "open_interest": 3435},
+      {"symbol": "SPY260828C00765000", "right": "CALL", "strike": "765", "bid": "4.12", "ask": "4.24", "spread_pct": "0.02870813", "open_interest": 7212},
+      {"symbol": "SPY260828C00766000", "right": "CALL", "strike": "766", "bid": "3.64", "ask": "3.66", "spread_pct": "0.00547945", "open_interest": 3803},
+      {"symbol": "SPY260828P00764000", "right": "PUT", "strike": "764", "bid": "2.44", "ask": "2.46", "spread_pct": "0.00816327", "open_interest": 5537},
+      {"symbol": "SPY260828P00765000", "right": "PUT", "strike": "765", "bid": "2.87", "ask": "2.89", "spread_pct": "0.00694444", "open_interest": 7743},
+      {"symbol": "SPY260828P00766000", "right": "PUT", "strike": "766", "bid": "3.22", "ask": "3.23", "spread_pct": "0.00310078", "open_interest": 2617}
+    ]
+  }
+}

@@ -21,6 +21,13 @@ MARKET OBSERVATION
 Current state: `PREPARATION_ONLY`. No account credentials, API keys, orders,
 positions, P&L claims, or private AURORA datasets are stored here.
 
+Every decision is recorded in a SHA-256 hash chain. The audit layer rejects
+fields whose names could contain credentials, tokens, passwords, or secrets.
+
+The repository also contains a dated Alpaca market-data fixture and an explicit
+spread/regulatory-fee model. It never assumes that commission-free means
+friction-free.
+
 ## Local checks
 
 ```powershell

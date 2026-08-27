@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import unittest
+from dataclasses import replace
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 
 from aurora_sentinel.agent import OptionsSentinel
 from aurora_sentinel.alpaca_cli import build_paper_order_request
+from aurora_sentinel.audit import AuditTrail, verify_chain
 from aurora_sentinel.contracts import (
     AgentThesis,
     Direction,
@@ -14,6 +16,7 @@ from aurora_sentinel.contracts import (
     PaperAccountState,
     RiskLimits,
 )
+from aurora_sentinel.costs import estimate_long_option_round_trip
 from aurora_sentinel.risk import RiskGate
 
 
@@ -120,6 +123,37 @@ class OptionsSentinelTests(unittest.TestCase):
     def test_non_paper_account_cannot_be_constructed(self) -> None:
         with self.assertRaisesRegex(ValueError, "paper_environment_required"):
             account(environment="live")
+
+    def test_decisions_form_a_verifiable_audit_chain(self) -> None:
+        decision = self.sentinel.decide(
+            thesis=thesis(), contracts=(contract(),), account=account(), evaluated_at=NOW
+        )
+        audit = AuditTrail()
+        first = audit.record_decision(decision, emitted_at=NOW)
+        audit.append(event_type="ORDER_INTENT_BUILT", payload={"paper": True}, emitted_at=NOW)
+        self.assertTrue(verify_chain(audit.events))
+        tampered = (replace(first, payload_json='{"action":"LIVE"}'), *audit.events[1:])
+        self.assertFalse(verify_chain(tampered))
+
+    def test_audit_rejects_sensitive_fields(self) -> None:
+        audit = AuditTrail()
+        with self.assertRaisesRegex(ValueError, "sensitive_audit_field_rejected"):
+            audit.append(
+                event_type="BAD_EVENT",
+                payload={"nested": {"api_key": "must-not-be-recorded"}},
+                emitted_at=NOW,
+            )
+
+    def test_round_trip_cost_includes_spread_and_regulatory_fees(self) -> None:
+        estimate = estimate_long_option_round_trip(
+            bid=Decimal("3.64"),
+            ask=Decimal("3.66"),
+            exit_premium=Decimal("3.64"),
+        )
+        self.assertEqual(estimate.quoted_round_trip_spread_usd, Decimal("2.00"))
+        self.assertEqual(estimate.buy_fees_unrounded_usd, Decimal("0.040300"))
+        self.assertGreater(estimate.sell_fees_unrounded_usd, Decimal("0.04359"))
+        self.assertEqual(estimate.conservative_rounded_fee_floor_usd, Decimal("0.11"))
 
 
 if __name__ == "__main__":

@@ -8,6 +8,7 @@ from decimal import Decimal
 
 from .agent import OptionsSentinel
 from .alpaca_cli import build_paper_order_request
+from .audit import AuditTrail, verify_chain
 from .contracts import AgentThesis, Direction, OptionContract, OptionRight, PaperAccountState, RiskLimits
 from .risk import RiskGate
 
@@ -48,7 +49,22 @@ def main() -> None:
         evaluated_at=now,
     )
     request = build_paper_order_request(decision)
-    print(json.dumps({"decision": decision.action, "request": json.loads(request.render_for_audit())}, indent=2))
+    audit = AuditTrail()
+    audit_event = audit.record_decision(decision, emitted_at=now)
+    print(
+        json.dumps(
+            {
+                "decision": decision.action,
+                "request": json.loads(request.render_for_audit()),
+                "audit": {
+                    "event_hash": audit_event.event_hash,
+                    "sequence": audit_event.sequence,
+                    "verified": verify_chain(audit.events),
+                },
+            },
+            indent=2,
+        )
+    )
 
 
 if __name__ == "__main__":
