@@ -41,6 +41,7 @@ python -m unittest discover -s tests -v
 python -m aurora_sentinel.demo
 python -m aurora_sentinel.paper_account
 python -m aurora_sentinel.market_data
+python scripts/capture_shadow_observation.py
 ```
 
 The final command reads the API key and secret from Windows Credential Manager
@@ -52,6 +53,11 @@ The market-data command uses IEX for SPY and Alpaca's free indicative options
 feed. It captures the market clock, timestamps every quote, merges contract open
 interest, and reports `NO_ACTION` whenever the market is closed. Indicative
 quotes are research inputs, not official OPRA execution prices.
+
+The shadow-observation command loads aggregate model evidence, verifies the
+Paper account, captures stock and options spreads and estimates round-trip
+friction. It always emits `NO_ACTION`, prepares no order, and stores its private
+forward record under the Git-ignored `artifacts/` directory.
 
 The first real IEX experiment trained ridge and random-forest candidates on a
 strict 2021-2022/2023/2024 temporal split while blacking out AURORA Core's 2025

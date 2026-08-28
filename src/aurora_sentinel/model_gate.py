@@ -163,7 +163,11 @@ def assess_model_evidence(
     if evidence.validation_net_return_proxy <= 0:
         reasons.append("validation_net_return_proxy_not_positive")
     if evidence.test_net_return_proxy <= 0:
-        reasons.append("test_net_return_proxy_not_positive")
+        reasons.append(
+            "test_net_return_proxy_not_positive"
+            if isinstance(evidence, ModelEvidence)
+            else "sealed_test_net_return_proxy_not_positive"
+        )
     if not evidence.paper_eligible:
         reasons.append("model_not_paper_eligible")
     return tuple(dict.fromkeys(reasons))
