@@ -1,0 +1,52 @@
+{
+  "schema_version": "aurora.contest-model-preregistration.v1",
+  "generation": 2,
+  "state": "FROZEN_BEFORE_SEALED_TEST",
+  "track": "CONTEST_EXPERIMENTAL_IEX",
+  "core_model_evidence": false,
+  "paper_only": true,
+  "live_trading_allowed": false,
+  "instrument": "SPY",
+  "timeframe": "M15",
+  "feature_set": "MARKET_CORE_M15_V1",
+  "target": "forward_close_return_4_cost_aware_class",
+  "classes": {
+    "CALL": "target > 0.0005",
+    "PUT": "target < -0.0005",
+    "NO_ACTION": "otherwise"
+  },
+  "periods": {
+    "train": "2021-01-01/2024-01-01",
+    "validation": "2024-01-01/2025-01-01",
+    "core_holdout_blackout": "2025-01-01/2026-01-01",
+    "sealed_test": "2026-01-01/2026-08-27"
+  },
+  "candidate_families": {
+    "RANDOM_FOREST_CLASSIFIER": 3,
+    "HIST_GRADIENT_BOOSTING_CLASSIFIER": 3
+  },
+  "probability_thresholds": [0.45, 0.5, 0.55, 0.6],
+  "selection": "maximum_validation_net_return_proxy_subject_to_minimum_100_non_overlapping_decisions_then_macro_f1",
+  "economic_proxy": {
+    "round_trip_cost_bps": 2.0,
+    "overlap": "NON_OVERLAPPING_4_BAR_SIGNALS",
+    "status": "UNVERIFIED_UNDERLYING_PROXY_NOT_OPTIONS_PNL"
+  },
+  "acceptance": {
+    "validation_net_return_proxy_gt": 0,
+    "sealed_test_net_return_proxy_gt": 0,
+    "validation_macro_f1_gt_majority_baseline": true,
+    "sealed_test_macro_f1_gt_majority_baseline": true,
+    "minimum_validation_decisions": 100,
+    "minimum_sealed_test_decisions": 100,
+    "maximum_sealed_test_drawdown_proxy": 0.15
+  },
+  "paper_probe": {
+    "maximum_contracts": 1,
+    "automatic_submission": false,
+    "requires_fresh_market_and_option_quotes": true,
+    "requires_existing_risk_gate": true
+  },
+  "sealed_test_openings_allowed": 1,
+  "sealed_test_openings_used": 0
+}
