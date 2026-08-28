@@ -10,7 +10,7 @@ from .contracts import (
     RiskLimits,
 )
 from .risk import RiskAssessment, RiskGate
-from .model_gate import ModelEvidence, load_model_evidence
+from .model_gate import ClassifierModelEvidence, ModelEvidence, load_model_evidence
 
 __all__ = [
     "AgentDecision",
@@ -24,5 +24,6 @@ __all__ = [
     "RiskGate",
     "RiskLimits",
     "ModelEvidence",
+    "ClassifierModelEvidence",
     "load_model_evidence",
 ]

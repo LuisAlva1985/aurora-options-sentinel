@@ -7,7 +7,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from .contracts import AgentThesis, Direction, OptionContract, OptionRight, PaperAccountState
-from .model_gate import ModelEvidence, assess_model_evidence
+from .model_gate import ClassifierModelEvidence, ModelEvidence, assess_model_evidence
 from .risk import RiskAssessment, RiskGate
 
 
@@ -38,7 +38,7 @@ class OptionsSentinel:
         contracts: tuple[OptionContract, ...],
         account: PaperAccountState,
         evaluated_at: datetime,
-        model_evidence: ModelEvidence | None = None,
+        model_evidence: ModelEvidence | ClassifierModelEvidence | None = None,
     ) -> AgentDecision:
         model_reasons = assess_model_evidence(model_evidence, evaluated_at=evaluated_at)
         if model_reasons:

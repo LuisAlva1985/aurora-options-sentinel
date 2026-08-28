@@ -1,7 +1,7 @@
 {
   "schema_version": "aurora.contest-model-preregistration.v1",
   "generation": 2,
-  "state": "FROZEN_BEFORE_SEALED_TEST",
+  "state": "EXECUTED_REJECTED",
   "track": "CONTEST_EXPERIMENTAL_IEX",
   "core_model_evidence": false,
   "paper_only": true,
@@ -48,5 +48,20 @@
     "requires_existing_risk_gate": true
   },
   "sealed_test_openings_allowed": 1,
-  "sealed_test_openings_used": 0
+  "sealed_test_openings_used": 1,
+  "result": {
+    "selected_family": "RANDOM_FOREST_CLASSIFIER",
+    "selected_probability_threshold": 0.45,
+    "validation_net_return_proxy": 0.032661662433535917,
+    "validation_decisions": 133,
+    "sealed_test_net_return_proxy": -0.051973655593985875,
+    "sealed_test_decisions": 128,
+    "sealed_test_maximum_drawdown_proxy": 0.05454607634649635,
+    "paper_eligible": false,
+    "reason_codes": [
+      "sealed_test_net_return_proxy_not_positive",
+      "validation_macro_f1_did_not_beat_majority",
+      "sealed_test_macro_f1_did_not_beat_majority"
+    ]
+  }
 }

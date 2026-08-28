@@ -33,15 +33,16 @@
   "contest_model": {
     "track": "CONTEST_EXPERIMENTAL_IEX",
     "authorization_scope": "personal_noncommercial_internal_research_and_later_paper_evaluation",
-    "generation": 1,
+    "generation": 2,
     "state": "TRAINED_REJECTED",
     "source_window": "2021-01-01/2025-01-01",
     "core_holdout_2025_blackout": true,
-    "selected_family": "RANDOM_FOREST_REGRESSOR",
+    "selected_family": "RANDOM_FOREST_CLASSIFIER",
     "paper_eligible": false,
     "reason_codes": [
-      "test_did_not_beat_baseline",
-      "test_net_return_proxy_not_positive"
+      "sealed_test_net_return_proxy_not_positive",
+      "validation_macro_f1_did_not_beat_majority",
+      "sealed_test_macro_f1_did_not_beat_majority"
     ]
   }
 }
