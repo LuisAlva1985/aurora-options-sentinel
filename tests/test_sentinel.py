@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import os
 import unittest
 from dataclasses import replace
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
+from unittest.mock import patch
 
 from aurora_sentinel.agent import OptionsSentinel
 from aurora_sentinel.alpaca_cli import build_paper_order_request
@@ -17,6 +19,13 @@ from aurora_sentinel.contracts import (
     RiskLimits,
 )
 from aurora_sentinel.costs import estimate_long_option_round_trip
+from aurora_sentinel.paper_account import (
+    API_KEY_ENV,
+    AlpacaPaperCredentials,
+    credential_target,
+    load_paper_credentials,
+    verify_competition_account,
+)
 from aurora_sentinel.risk import RiskGate
 
 
@@ -154,6 +163,60 @@ class OptionsSentinelTests(unittest.TestCase):
         self.assertEqual(estimate.buy_fees_unrounded_usd, Decimal("0.040300"))
         self.assertGreater(estimate.sell_fees_unrounded_usd, Decimal("0.04359"))
         self.assertEqual(estimate.conservative_rounded_fee_floor_usd, Decimal("0.11"))
+
+    def test_credential_targets_are_account_scoped(self) -> None:
+        self.assertEqual(
+            credential_target("PA3HAW9279NN", "API_KEY"),
+            "AURORA/Alpaca/Paper/PA3HAW9279NN/API_KEY",
+        )
+        with self.assertRaisesRegex(ValueError, "paper_account_number_required"):
+            credential_target("LIVE123", "API_KEY")
+
+    def test_partial_environment_credentials_fail_closed(self) -> None:
+        with patch.dict(os.environ, {API_KEY_ENV: "P" * 26}, clear=True):
+            with self.assertRaisesRegex(RuntimeError, "partial_alpaca_environment_rejected"):
+                load_paper_credentials("PA3HAW9279NN")
+
+    def test_credentials_can_be_loaded_without_entering_the_repository(self) -> None:
+        values = {
+            credential_target("PA3HAW9279NN", "API_KEY"): "P" * 26,
+            credential_target("PA3HAW9279NN", "SECRET_KEY"): "S" * 44,
+        }
+        with patch.dict(os.environ, {}, clear=True):
+            credentials = load_paper_credentials(
+                "PA3HAW9279NN", credential_reader=values.__getitem__
+            )
+        self.assertEqual(credentials.account_number, "PA3HAW9279NN")
+        self.assertEqual(credentials.base_url, "https://paper-api.alpaca.markets")
+
+    def test_live_endpoint_cannot_be_injected(self) -> None:
+        with self.assertRaisesRegex(ValueError, "paper_endpoint_required"):
+            AlpacaPaperCredentials(
+                "PA3HAW9279NN",
+                "P" * 26,
+                "S" * 44,
+                base_url="https://api.alpaca.markets",
+            )
+
+    def test_competition_account_must_be_active_fresh_and_unblocked(self) -> None:
+        payload: dict[str, object] = {
+            "account_number": "PA3HAW9279NN",
+            "status": "ACTIVE",
+            "cash": "100000",
+            "buying_power": "400000",
+            "portfolio_value": "100000",
+            "trading_blocked": False,
+            "account_blocked": False,
+        }
+        verified = verify_competition_account(
+            payload, expected_account_number="PA3HAW9279NN"
+        )
+        self.assertEqual(verified.cash_usd, Decimal("100000"))
+        with self.assertRaisesRegex(RuntimeError, "competition_starting_balance_mismatch"):
+            verify_competition_account(
+                {**payload, "cash": "99999"},
+                expected_account_number="PA3HAW9279NN",
+            )
 
 
 if __name__ == "__main__":

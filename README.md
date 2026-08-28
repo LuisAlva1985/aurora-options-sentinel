@@ -18,8 +18,10 @@ MARKET OBSERVATION
   -> AUDIT EVENT
 ```
 
-Current state: `PREPARATION_ONLY`. No account credentials, API keys, orders,
-positions, P&L claims, or private AURORA datasets are stored here.
+Current state: `PAPER_READY`. The dedicated competition account is
+`PA3HAW9279NN`, starts at $100,000 simulated cash, and has been authenticated
+against Alpaca's Paper endpoint. No credential values, orders, positions, P&L
+claims, or private AURORA datasets are stored here.
 
 Official LabLab team: [AURORA Options Sentinel](https://lablab.ai/ai-hackathons/alpaca-ai-trading-agents-hackathon/aurora-options-sentinel).
 The team was created closed, with the Costa Rica timezone (UTC-6).
@@ -36,7 +38,13 @@ friction-free.
 ```powershell
 python -m unittest discover -s tests -v
 python -m aurora_sentinel.demo
+python -m aurora_sentinel.paper_account
 ```
+
+The final command reads the API key and secret from Windows Credential Manager
+under account-scoped `AURORA/Alpaca/Paper/...` targets. It fails closed if the
+account is not active, is blocked, does not match `PA3HAW9279NN`, does not start
+at exactly $100,000, or if any endpoint other than Alpaca Paper is requested.
 
 ## Competition constraints
 
