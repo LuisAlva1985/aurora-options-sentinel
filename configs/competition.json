@@ -22,5 +22,6 @@
   "order_type": "limit",
   "time_in_force": "day",
   "live_trading_allowed": false,
+  "paper_order_submission_enabled": false,
   "credentials_in_repository": false
 }

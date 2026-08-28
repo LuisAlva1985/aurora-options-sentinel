@@ -52,6 +52,11 @@ feed. It captures the market clock, timestamps every quote, merges contract open
 interest, and reports `NO_ACTION` whenever the market is closed. Indicative
 quotes are research inputs, not official OPRA execution prices.
 
+The order gateway is present but `paper_order_submission_enabled` remains
+`false` until the build window begins. It accepts only one-contract BUY limit
+orders, checks the dedicated Paper account and live market clock again, and has
+no configurable live-trading URL.
+
 ## Competition constraints
 
 - Alpaca Paper only; no real capital.

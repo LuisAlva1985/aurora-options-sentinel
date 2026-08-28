@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import unittest
 from dataclasses import replace
@@ -21,15 +22,22 @@ from aurora_sentinel.contracts import (
 from aurora_sentinel.costs import estimate_long_option_round_trip
 from aurora_sentinel.market_data import (
     AlpacaReadOnlyDataClient,
+    MarketClock,
     next_friday_in_window,
     normalize_option_chain,
 )
 from aurora_sentinel.paper_account import (
     API_KEY_ENV,
     AlpacaPaperCredentials,
+    VerifiedPaperAccount,
     credential_target,
     load_paper_credentials,
     verify_competition_account,
+)
+from aurora_sentinel.paper_orders import (
+    PAPER_ORDERS_URL,
+    AlpacaPaperOrderClient,
+    prepare_paper_order,
 )
 from aurora_sentinel.risk import RiskGate
 
@@ -291,6 +299,77 @@ class OptionsSentinelTests(unittest.TestCase):
         client = AlpacaReadOnlyDataClient(credentials)
         with self.assertRaisesRegex(ValueError, "alpaca_read_only_endpoint_required"):
             client._get_json("https://data.alpaca.markets.evil.invalid/v2/stocks/SPY")
+
+    def test_paper_order_gateway_is_disabled_by_default(self) -> None:
+        decision = self.sentinel.decide(
+            thesis=thesis(), contracts=(contract(),), account=account(), evaluated_at=NOW
+        )
+        prepared = prepare_paper_order(decision, account_number="PA3HAW9279NN")
+        credentials = AlpacaPaperCredentials("PA3HAW9279NN", "P" * 26, "S" * 44)
+        client = AlpacaPaperOrderClient(credentials)
+        verified = VerifiedPaperAccount(
+            account_number="PA3HAW9279NN",
+            status="ACTIVE",
+            cash_usd=Decimal("100000"),
+            buying_power_usd=Decimal("400000"),
+            portfolio_value_usd=Decimal("100000"),
+            trading_blocked=False,
+            account_blocked=False,
+        )
+        clock = MarketClock(True, NOW, NOW + timedelta(hours=1), NOW + timedelta(hours=6))
+        with self.assertRaisesRegex(RuntimeError, "paper_order_submission_disabled"):
+            client.submit(prepared, account=verified, clock=clock)
+
+    def test_paper_order_gateway_posts_only_the_prepared_limit_payload(self) -> None:
+        decision = self.sentinel.decide(
+            thesis=thesis(), contracts=(contract(),), account=account(), evaluated_at=NOW
+        )
+        prepared = prepare_paper_order(decision, account_number="PA3HAW9279NN")
+        requests: list[object] = []
+
+        class FakeResponse:
+            def __enter__(self) -> FakeResponse:
+                return self
+
+            def __exit__(self, *_: object) -> None:
+                return None
+
+            def read(self) -> bytes:
+                return json.dumps(
+                    {
+                        "id": "paper-order-1",
+                        "client_order_id": prepared.payload()["client_order_id"],
+                        "symbol": prepared.symbol,
+                        "status": "accepted",
+                    }
+                ).encode("utf-8")
+
+        def fake_opener(request: object, *, timeout: int) -> FakeResponse:
+            requests.append(request)
+            self.assertEqual(timeout, 20)
+            self.assertEqual(getattr(request, "full_url"), PAPER_ORDERS_URL)
+            self.assertEqual(getattr(request, "method"), "POST")
+            return FakeResponse()
+
+        credentials = AlpacaPaperCredentials("PA3HAW9279NN", "P" * 26, "S" * 44)
+        client = AlpacaPaperOrderClient(
+            credentials, submission_enabled=True, opener=fake_opener
+        )
+        verified = VerifiedPaperAccount(
+            account_number="PA3HAW9279NN",
+            status="ACTIVE",
+            cash_usd=Decimal("100000"),
+            buying_power_usd=Decimal("400000"),
+            portfolio_value_usd=Decimal("100000"),
+            trading_blocked=False,
+            account_blocked=False,
+        )
+        clock = MarketClock(True, NOW, NOW + timedelta(hours=1), NOW + timedelta(hours=6))
+        receipt = client.submit(prepared, account=verified, clock=clock)
+        self.assertEqual(receipt.order_id, "paper-order-1")
+        self.assertEqual(len(requests), 1)
+        self.assertEqual(prepared.payload()["type"], "limit")
+        self.assertEqual(prepared.payload()["qty"], "1")
 
 
 if __name__ == "__main__":
