@@ -28,6 +28,12 @@ def build_paper_order_request(decision: AgentDecision) -> RedactedCliRequest:
         raise ValueError("paper_environment_required")
     if decision.action != "BUY_TO_OPEN" or not decision.assessment.approved:
         raise ValueError("approved_buy_to_open_decision_required")
+    if (
+        not decision.model_validated_for_paper
+        or decision.model_id is None
+        or decision.model_evidence_id is None
+    ):
+        raise ValueError("validated_model_evidence_required")
     if decision.contract_symbol is None or decision.limit_price is None or decision.quantity != 1:
         raise ValueError("incomplete_order_intent")
     if decision.limit_price <= Decimal("0"):

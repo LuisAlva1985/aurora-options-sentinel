@@ -53,6 +53,12 @@ def prepare_paper_order(
         raise ValueError("paper_environment_required")
     if not decision.assessment.approved or decision.action != "BUY_TO_OPEN":
         raise ValueError("approved_buy_to_open_decision_required")
+    if (
+        not decision.model_validated_for_paper
+        or decision.model_id is None
+        or decision.model_evidence_id is None
+    ):
+        raise ValueError("validated_model_evidence_required")
     if decision.contract_symbol is None or decision.limit_price is None:
         raise ValueError("incomplete_order_intent")
     if decision.quantity != 1 or decision.limit_price <= 0:
@@ -62,6 +68,8 @@ def prepare_paper_order(
             "account_number": account_number,
             "environment": "paper",
             "limit_price": str(decision.limit_price),
+            "model_evidence_id": decision.model_evidence_id,
+            "model_id": decision.model_id,
             "quantity": decision.quantity,
             "symbol": decision.contract_symbol,
         },

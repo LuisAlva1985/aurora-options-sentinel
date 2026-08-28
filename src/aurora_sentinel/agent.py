@@ -7,6 +7,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from .contracts import AgentThesis, Direction, OptionContract, OptionRight, PaperAccountState
+from .model_gate import ModelEvidence, assess_model_evidence
 from .risk import RiskAssessment, RiskGate
 
 
@@ -18,6 +19,9 @@ class AgentDecision:
     quantity: int
     assessment: RiskAssessment
     rationale: str
+    model_id: str | None = None
+    model_evidence_id: str | None = None
+    model_validated_for_paper: bool = False
     environment: str = "paper"
     order_type: str = "limit"
     time_in_force: str = "day"
@@ -34,10 +38,35 @@ class OptionsSentinel:
         contracts: tuple[OptionContract, ...],
         account: PaperAccountState,
         evaluated_at: datetime,
+        model_evidence: ModelEvidence | None = None,
     ) -> AgentDecision:
+        model_reasons = assess_model_evidence(model_evidence, evaluated_at=evaluated_at)
+        if model_reasons:
+            assessment = RiskAssessment(False, model_reasons)
+            return AgentDecision(
+                "NO_ACTION",
+                None,
+                None,
+                0,
+                assessment,
+                thesis.rationale,
+                model_id=model_evidence.model_id if model_evidence else None,
+                model_evidence_id=model_evidence.evidence_id if model_evidence else None,
+            )
+        assert model_evidence is not None
         if thesis.direction is Direction.NEUTRAL:
             assessment = RiskAssessment(False, ("neutral_thesis_no_action",))
-            return AgentDecision("NO_ACTION", None, None, 0, assessment, thesis.rationale)
+            return AgentDecision(
+                "NO_ACTION",
+                None,
+                None,
+                0,
+                assessment,
+                thesis.rationale,
+                model_id=model_evidence.model_id,
+                model_evidence_id=model_evidence.evidence_id,
+                model_validated_for_paper=True,
+            )
         required_right = OptionRight.CALL if thesis.direction is Direction.BULLISH else OptionRight.PUT
         eligible = tuple(
             contract
@@ -46,7 +75,17 @@ class OptionsSentinel:
         )
         if not eligible:
             assessment = RiskAssessment(False, ("no_direction_compatible_contract",))
-            return AgentDecision("NO_ACTION", None, None, 0, assessment, thesis.rationale)
+            return AgentDecision(
+                "NO_ACTION",
+                None,
+                None,
+                0,
+                assessment,
+                thesis.rationale,
+                model_id=model_evidence.model_id,
+                model_evidence_id=model_evidence.evidence_id,
+                model_validated_for_paper=True,
+            )
         ranked = sorted(
             eligible,
             key=lambda contract: (
@@ -66,7 +105,15 @@ class OptionsSentinel:
         )
         if not assessment.approved:
             return AgentDecision(
-                "NO_ACTION", candidate.symbol, None, 0, assessment, thesis.rationale
+                "NO_ACTION",
+                candidate.symbol,
+                None,
+                0,
+                assessment,
+                thesis.rationale,
+                model_id=model_evidence.model_id,
+                model_evidence_id=model_evidence.evidence_id,
+                model_validated_for_paper=True,
             )
         return AgentDecision(
             "BUY_TO_OPEN",
@@ -75,4 +122,7 @@ class OptionsSentinel:
             1,
             assessment,
             thesis.rationale,
+            model_id=model_evidence.model_id,
+            model_evidence_id=model_evidence.evidence_id,
+            model_validated_for_paper=True,
         )

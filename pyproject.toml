@@ -9,7 +9,11 @@ description = "Paper-only autonomous options agent with fail-closed risk gates"
 requires-python = ">=3.12,<3.14"
 license = { text = "MIT" }
 authors = [{ name = "Luis Antonio Alvarado Salas" }]
-dependencies = []
+dependencies = [
+  "joblib>=1.4",
+  "numpy>=2.0",
+  "scikit-learn>=1.5",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

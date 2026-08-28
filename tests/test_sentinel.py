@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import json
 import os
+import tempfile
 import unittest
 from dataclasses import replace
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
+from pathlib import Path
 from unittest.mock import patch
 
 from aurora_sentinel.agent import OptionsSentinel
@@ -26,6 +28,7 @@ from aurora_sentinel.market_data import (
     next_friday_in_window,
     normalize_option_chain,
 )
+from aurora_sentinel.model_gate import ModelEvidence, load_model_evidence
 from aurora_sentinel.paper_account import (
     API_KEY_ENV,
     AlpacaPaperCredentials,
@@ -85,13 +88,34 @@ def account(**overrides: object) -> PaperAccountState:
     return PaperAccountState(**values)  # type: ignore[arg-type]
 
 
+def validated_model(**overrides: object) -> ModelEvidence:
+    values: dict[str, object] = {
+        "model_id": "a" * 64,
+        "track": "CONTEST_EXPERIMENTAL_IEX",
+        "feature_set": "MARKET_CORE_M15_V1",
+        "target": "forward_close_return_4",
+        "trained_at": NOW,
+        "validation_mae": Decimal("0.0010"),
+        "validation_baseline_mae": Decimal("0.0012"),
+        "test_mae": Decimal("0.0011"),
+        "test_baseline_mae": Decimal("0.0013"),
+        "validation_net_return_proxy": Decimal("0.02"),
+        "test_net_return_proxy": Decimal("0.01"),
+        "paper_eligible": True,
+        "reason_codes": ("synthetic_test_fixture",),
+    }
+    values.update(overrides)
+    return ModelEvidence(**values)  # type: ignore[arg-type]
+
+
 class OptionsSentinelTests(unittest.TestCase):
     def setUp(self) -> None:
         self.sentinel = OptionsSentinel(RiskGate(RiskLimits()))
 
     def test_approved_decision_builds_paper_limit_request(self) -> None:
         decision = self.sentinel.decide(
-            thesis=thesis(), contracts=(contract(),), account=account(), evaluated_at=NOW
+            thesis=thesis(), contracts=(contract(),), account=account(), evaluated_at=NOW,
+            model_evidence=validated_model(),
         )
         self.assertEqual(decision.action, "BUY_TO_OPEN")
         request = build_paper_order_request(decision)
@@ -105,6 +129,7 @@ class OptionsSentinelTests(unittest.TestCase):
             contracts=(contract(),),
             account=account(),
             evaluated_at=NOW,
+            model_evidence=validated_model(),
         )
         self.assertEqual(decision.action, "NO_ACTION")
         self.assertIn("confidence_below_threshold", decision.assessment.reason_codes)
@@ -115,6 +140,7 @@ class OptionsSentinelTests(unittest.TestCase):
             contracts=(contract(),),
             account=account(daily_pnl_usd=Decimal("-1000"), orders_today=4),
             evaluated_at=NOW,
+            model_evidence=validated_model(),
         )
         self.assertFalse(decision.assessment.approved)
         self.assertIn("daily_loss_limit_reached", decision.assessment.reason_codes)
@@ -130,7 +156,8 @@ class OptionsSentinelTests(unittest.TestCase):
             evidence_ids=("fixture-stale",),
         )
         decision = self.sentinel.decide(
-            thesis=stale, contracts=(contract(),), account=account(), evaluated_at=NOW
+            thesis=stale, contracts=(contract(),), account=account(), evaluated_at=NOW,
+            model_evidence=validated_model(),
         )
         self.assertIn("thesis_stale_or_future", decision.assessment.reason_codes)
 
@@ -140,6 +167,7 @@ class OptionsSentinelTests(unittest.TestCase):
             contracts=(contract(),),
             account=account(),
             evaluated_at=NOW,
+            model_evidence=validated_model(),
         )
         self.assertEqual(decision.contract_symbol, None)
         self.assertEqual(decision.action, "NO_ACTION")
@@ -159,6 +187,7 @@ class OptionsSentinelTests(unittest.TestCase):
             ),
             account=account(market_open=False),
             evaluated_at=NOW,
+            model_evidence=validated_model(),
         )
         self.assertIn("market_closed", decision.assessment.reason_codes)
         self.assertIn("option_quote_stale_or_future", decision.assessment.reason_codes)
@@ -169,12 +198,14 @@ class OptionsSentinelTests(unittest.TestCase):
             contracts=(replace(contract(), open_interest=10),),
             account=account(),
             evaluated_at=NOW,
+            model_evidence=validated_model(),
         )
         self.assertIn("open_interest_below_threshold", decision.assessment.reason_codes)
 
     def test_decisions_form_a_verifiable_audit_chain(self) -> None:
         decision = self.sentinel.decide(
-            thesis=thesis(), contracts=(contract(),), account=account(), evaluated_at=NOW
+            thesis=thesis(), contracts=(contract(),), account=account(), evaluated_at=NOW,
+            model_evidence=validated_model(),
         )
         audit = AuditTrail()
         first = audit.record_decision(decision, emitted_at=NOW)
@@ -302,7 +333,8 @@ class OptionsSentinelTests(unittest.TestCase):
 
     def test_paper_order_gateway_is_disabled_by_default(self) -> None:
         decision = self.sentinel.decide(
-            thesis=thesis(), contracts=(contract(),), account=account(), evaluated_at=NOW
+            thesis=thesis(), contracts=(contract(),), account=account(), evaluated_at=NOW,
+            model_evidence=validated_model(),
         )
         prepared = prepare_paper_order(decision, account_number="PA3HAW9279NN")
         credentials = AlpacaPaperCredentials("PA3HAW9279NN", "P" * 26, "S" * 44)
@@ -322,7 +354,8 @@ class OptionsSentinelTests(unittest.TestCase):
 
     def test_paper_order_gateway_posts_only_the_prepared_limit_payload(self) -> None:
         decision = self.sentinel.decide(
-            thesis=thesis(), contracts=(contract(),), account=account(), evaluated_at=NOW
+            thesis=thesis(), contracts=(contract(),), account=account(), evaluated_at=NOW,
+            model_evidence=validated_model(),
         )
         prepared = prepare_paper_order(decision, account_number="PA3HAW9279NN")
         requests: list[object] = []
@@ -370,6 +403,83 @@ class OptionsSentinelTests(unittest.TestCase):
         self.assertEqual(len(requests), 1)
         self.assertEqual(prepared.payload()["type"], "limit")
         self.assertEqual(prepared.payload()["qty"], "1")
+
+    def test_missing_or_failed_model_evidence_prevents_any_order_intent(self) -> None:
+        missing = self.sentinel.decide(
+            thesis=thesis(), contracts=(contract(),), account=account(), evaluated_at=NOW
+        )
+        self.assertEqual(missing.action, "NO_ACTION")
+        self.assertIn("model_evidence_missing", missing.assessment.reason_codes)
+
+        failed = self.sentinel.decide(
+            thesis=thesis(),
+            contracts=(contract(),),
+            account=account(),
+            evaluated_at=NOW,
+            model_evidence=validated_model(
+                paper_eligible=False,
+                test_mae=Decimal("0.0020"),
+            ),
+        )
+        self.assertEqual(failed.action, "NO_ACTION")
+        self.assertIn("test_did_not_beat_baseline", failed.assessment.reason_codes)
+        self.assertIn("model_not_paper_eligible", failed.assessment.reason_codes)
+
+    def test_order_preparation_rejects_forged_approved_decision_without_model(self) -> None:
+        forged = self.sentinel.decide(
+            thesis=thesis(),
+            contracts=(contract(),),
+            account=account(),
+            evaluated_at=NOW,
+            model_evidence=validated_model(),
+        )
+        forged = replace(
+            forged,
+            model_id=None,
+            model_evidence_id=None,
+            model_validated_for_paper=False,
+        )
+        with self.assertRaisesRegex(ValueError, "validated_model_evidence_required"):
+            prepare_paper_order(forged, account_number="PA3HAW9279NN")
+
+    def test_private_artifact_loader_preserves_failed_model_verdict(self) -> None:
+        payload = {
+            "schema_version": "aurora.contest-iex-model.v1",
+            "track": "CONTEST_EXPERIMENTAL_IEX",
+            "core_model_evidence": False,
+            "paper_only": True,
+            "live_trading_allowed": False,
+            "model_id": "b" * 64,
+            "trained_at": NOW.isoformat(),
+            "feature_set": "MARKET_CORE_M15_V1",
+            "target": "forward_close_return_4",
+            "validation": {
+                "mae": 0.001,
+                "baseline_mae": 0.002,
+                "net_return_proxy": 0.01,
+            },
+            "test": {
+                "mae": 0.003,
+                "baseline_mae": 0.002,
+                "net_return_proxy": -0.01,
+            },
+            "paper_eligible": False,
+            "reason_codes": ["test_did_not_beat_baseline"],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "artifact.json"
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            evidence = load_model_evidence(path)
+        decision = self.sentinel.decide(
+            thesis=thesis(),
+            contracts=(contract(),),
+            account=account(),
+            evaluated_at=NOW,
+            model_evidence=evidence,
+        )
+        self.assertEqual(decision.action, "NO_ACTION")
+        self.assertIn("test_did_not_beat_baseline", decision.assessment.reason_codes)
+        self.assertIn("model_not_paper_eligible", decision.assessment.reason_codes)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 {
   "schema_version": "aurora.options-sentinel.competition.v1",
   "mode": "paper",
-  "state": "PAPER_READY",
+  "state": "MODEL_BLOCKED_NO_VALIDATED_EDGE",
   "lablab_team_name": "AURORA Options Sentinel",
   "lablab_team_url": "https://lablab.ai/ai-hackathons/alpaca-ai-trading-agents-hackathon/aurora-options-sentinel",
   "lablab_team_timezone": "UTC-06:00",
@@ -23,5 +23,25 @@
   "time_in_force": "day",
   "live_trading_allowed": false,
   "paper_order_submission_enabled": false,
-  "credentials_in_repository": false
+  "credentials_in_repository": false,
+  "aurora_core": {
+    "state": "BLOCKED_EXTERNAL",
+    "blocker": "sip_model_training_scope_not_human_confirmed",
+    "training_execution_allowed": false,
+    "holdout_2025_state": "SEALED"
+  },
+  "contest_model": {
+    "track": "CONTEST_EXPERIMENTAL_IEX",
+    "authorization_scope": "personal_noncommercial_internal_research_and_later_paper_evaluation",
+    "generation": 1,
+    "state": "TRAINED_REJECTED",
+    "source_window": "2021-01-01/2025-01-01",
+    "core_holdout_2025_blackout": true,
+    "selected_family": "RANDOM_FOREST_REGRESSOR",
+    "paper_eligible": false,
+    "reason_codes": [
+      "test_did_not_beat_baseline",
+      "test_net_return_proxy_not_positive"
+    ]
+  }
 }

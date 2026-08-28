@@ -10,7 +10,8 @@ deterministic risk gate and must target a dedicated Alpaca Paper account.
 
 ```text
 MARKET OBSERVATION
-  -> AI THESIS
+  -> VALIDATED MODEL EVIDENCE
+  -> MODEL-GENERATED THESIS
   -> OPTION CONTRACT SELECTION
   -> HARD RISK GATES
   -> PAPER ORDER INTENT
@@ -18,7 +19,7 @@ MARKET OBSERVATION
   -> AUDIT EVENT
 ```
 
-Current state: `PAPER_READY`. The dedicated competition account is
+Current state: `MODEL_BLOCKED_NO_VALIDATED_EDGE`. The dedicated competition account is
 `PA3HAW9279NN`, starts at $100,000 simulated cash, and has been authenticated
 against Alpaca's Paper endpoint. No credential values, orders, positions, P&L
 claims, or private AURORA datasets are stored here.
@@ -52,8 +53,14 @@ feed. It captures the market clock, timestamps every quote, merges contract open
 interest, and reports `NO_ACTION` whenever the market is closed. Indicative
 quotes are research inputs, not official OPRA execution prices.
 
+The first real IEX experiment trained ridge and random-forest candidates on a
+strict 2021-2022/2023/2024 temporal split while blacking out AURORA Core's 2025
+holdout. The selected forest passed validation but failed test MAE and net-return
+proxy gates, so it was rejected. This is evidence that the safety gate works,
+not evidence of profitability.
+
 The order gateway is present but `paper_order_submission_enabled` remains
-`false` until the build window begins. It accepts only one-contract BUY limit
+`false` while no model is Paper-eligible. It accepts only one-contract BUY limit
 orders, checks the dedicated Paper account and live market clock again, and has
 no configurable live-trading URL.
 

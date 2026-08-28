@@ -72,6 +72,9 @@ class AuditTrail:
             "contract_symbol": decision.contract_symbol,
             "environment": decision.environment,
             "limit_price": decision.limit_price,
+            "model_evidence_id": decision.model_evidence_id,
+            "model_id": decision.model_id,
+            "model_validated_for_paper": decision.model_validated_for_paper,
             "quantity": decision.quantity,
             "reason_codes": decision.assessment.reason_codes,
         }

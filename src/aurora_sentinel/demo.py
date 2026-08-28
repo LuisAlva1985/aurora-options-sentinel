@@ -11,6 +11,7 @@ from .alpaca_cli import build_paper_order_request
 from .audit import AuditTrail, verify_chain
 from .contracts import AgentThesis, Direction, OptionContract, OptionRight, PaperAccountState, RiskLimits
 from .risk import RiskGate
+from .model_gate import ModelEvidence
 
 
 def main() -> None:
@@ -49,6 +50,21 @@ def main() -> None:
         contracts=(contract,),
         account=account,
         evaluated_at=now,
+        model_evidence=ModelEvidence(
+            model_id="a" * 64,
+            track="CONTEST_EXPERIMENTAL_IEX",
+            feature_set="MARKET_CORE_M15_V1",
+            target="forward_close_return_4",
+            trained_at=now,
+            validation_mae=Decimal("0.0010"),
+            validation_baseline_mae=Decimal("0.0012"),
+            test_mae=Decimal("0.0011"),
+            test_baseline_mae=Decimal("0.0013"),
+            validation_net_return_proxy=Decimal("0.02"),
+            test_net_return_proxy=Decimal("0.01"),
+            paper_eligible=True,
+            reason_codes=("synthetic_demo_only",),
+        ),
     )
     request = build_paper_order_request(decision)
     audit = AuditTrail()
