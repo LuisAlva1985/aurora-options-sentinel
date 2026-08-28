@@ -2,8 +2,9 @@
 
 ## Before kickoff
 
-- Complete LabLab and Discord registration.
-- Create the team and dedicated public repository.
+- [x] Complete LabLab registration and join the official Discord server.
+- [x] Create the closed LabLab team `AURORA Options Sentinel` in UTC-6.
+- [ ] Create and connect the dedicated public GitHub repository.
 - Prepare the risk kernel, redaction policy, and offline fixtures.
 - Create a fresh competition Paper account only when the event workflow allows it.
 

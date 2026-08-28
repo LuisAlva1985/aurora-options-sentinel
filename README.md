@@ -21,6 +21,9 @@ MARKET OBSERVATION
 Current state: `PREPARATION_ONLY`. No account credentials, API keys, orders,
 positions, P&L claims, or private AURORA datasets are stored here.
 
+Official LabLab team: [AURORA Options Sentinel](https://lablab.ai/ai-hackathons/alpaca-ai-trading-agents-hackathon/aurora-options-sentinel).
+The team was created closed, with the Costa Rica timezone (UTC-6).
+
 Every decision is recorded in a SHA-256 hash chain. The audit layer rejects
 fields whose names could contain credentials, tokens, passwords, or secrets.
 
