@@ -19,6 +19,11 @@ from aurora_sentinel.contracts import (
     RiskLimits,
 )
 from aurora_sentinel.costs import estimate_long_option_round_trip
+from aurora_sentinel.market_data import (
+    AlpacaReadOnlyDataClient,
+    next_friday_in_window,
+    normalize_option_chain,
+)
 from aurora_sentinel.paper_account import (
     API_KEY_ENV,
     AlpacaPaperCredentials,
@@ -54,6 +59,7 @@ def contract(*, ask: str = "3.90", bid: str = "3.80") -> OptionContract:
         ask=Decimal(ask),
         open_interest=1000,
         volume=500,
+        quote_observed_at=NOW,
     )
 
 
@@ -64,6 +70,7 @@ def account(**overrides: object) -> PaperAccountState:
         "daily_pnl_usd": Decimal("0"),
         "open_risk_usd": Decimal("0"),
         "orders_today": 0,
+        "market_open": True,
         "observed_at": NOW,
     }
     values.update(overrides)
@@ -132,6 +139,30 @@ class OptionsSentinelTests(unittest.TestCase):
     def test_non_paper_account_cannot_be_constructed(self) -> None:
         with self.assertRaisesRegex(ValueError, "paper_environment_required"):
             account(environment="live")
+
+    def test_closed_market_and_stale_quote_fail_closed(self) -> None:
+        decision = self.sentinel.decide(
+            thesis=thesis(),
+            contracts=(
+                replace(
+                    contract(),
+                    quote_observed_at=NOW - timedelta(minutes=5),
+                ),
+            ),
+            account=account(market_open=False),
+            evaluated_at=NOW,
+        )
+        self.assertIn("market_closed", decision.assessment.reason_codes)
+        self.assertIn("option_quote_stale_or_future", decision.assessment.reason_codes)
+
+    def test_low_open_interest_fails_closed(self) -> None:
+        decision = self.sentinel.decide(
+            thesis=thesis(),
+            contracts=(replace(contract(), open_interest=10),),
+            account=account(),
+            evaluated_at=NOW,
+        )
+        self.assertIn("open_interest_below_threshold", decision.assessment.reason_codes)
 
     def test_decisions_form_a_verifiable_audit_chain(self) -> None:
         decision = self.sentinel.decide(
@@ -217,6 +248,49 @@ class OptionsSentinelTests(unittest.TestCase):
                 {**payload, "cash": "99999"},
                 expected_account_number="PA3HAW9279NN",
             )
+
+    def test_option_chain_normalization_preserves_quote_time_and_open_interest(self) -> None:
+        chain = normalize_option_chain(
+            underlying="SPY",
+            expiration=date(2026, 9, 4),
+            contract_payloads=[
+                {
+                    "symbol": "SPY260904C00777000",
+                    "type": "call",
+                    "strike_price": "777",
+                    "expiration_date": "2026-09-04",
+                    "open_interest": "769",
+                    "tradable": True,
+                    "status": "active",
+                }
+            ],
+            snapshot_payloads={
+                "SPY260904C00777000": {
+                    "latestQuote": {
+                        "bp": 2.46,
+                        "ap": 2.47,
+                        "t": NOW.isoformat(),
+                    },
+                    "latestTrade": {"s": 5},
+                }
+            },
+            captured_at=NOW,
+        )
+        self.assertEqual(len(chain.contracts), 1)
+        self.assertEqual(chain.contracts[0].open_interest, 769)
+        self.assertEqual(chain.contracts[0].quote_observed_at, NOW)
+
+    def test_expiration_picker_stays_inside_risk_window(self) -> None:
+        expiration = next_friday_in_window(date(2026, 8, 27))
+        self.assertEqual(expiration, date(2026, 9, 4))
+        self.assertGreaterEqual((expiration - date(2026, 8, 27)).days, 2)
+        self.assertLessEqual((expiration - date(2026, 8, 27)).days, 14)
+
+    def test_market_client_rejects_lookalike_hosts(self) -> None:
+        credentials = AlpacaPaperCredentials("PA3HAW9279NN", "P" * 26, "S" * 44)
+        client = AlpacaReadOnlyDataClient(credentials)
+        with self.assertRaisesRegex(ValueError, "alpaca_read_only_endpoint_required"):
+            client._get_json("https://data.alpaca.markets.evil.invalid/v2/stocks/SPY")
 
 
 if __name__ == "__main__":

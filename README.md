@@ -39,12 +39,18 @@ friction-free.
 python -m unittest discover -s tests -v
 python -m aurora_sentinel.demo
 python -m aurora_sentinel.paper_account
+python -m aurora_sentinel.market_data
 ```
 
 The final command reads the API key and secret from Windows Credential Manager
 under account-scoped `AURORA/Alpaca/Paper/...` targets. It fails closed if the
 account is not active, is blocked, does not match `PA3HAW9279NN`, does not start
 at exactly $100,000, or if any endpoint other than Alpaca Paper is requested.
+
+The market-data command uses IEX for SPY and Alpaca's free indicative options
+feed. It captures the market clock, timestamps every quote, merges contract open
+interest, and reports `NO_ACTION` whenever the market is closed. Indicative
+quotes are research inputs, not official OPRA execution prices.
 
 ## Competition constraints
 

@@ -48,6 +48,7 @@ class OptionContract:
     ask: Decimal
     open_interest: int
     volume: int
+    quote_observed_at: datetime
     tradable: bool = True
 
     def __post_init__(self) -> None:
@@ -57,6 +58,8 @@ class OptionContract:
             raise ValueError("invalid_option_quote")
         if self.open_interest < 0 or self.volume < 0:
             raise ValueError("invalid_liquidity_count")
+        if self.quote_observed_at.tzinfo is None or self.quote_observed_at.utcoffset() is None:
+            raise ValueError("option_quote_timestamp_must_be_timezone_aware")
 
     @property
     def spread_pct(self) -> Decimal:
@@ -77,6 +80,7 @@ class PaperAccountState:
     daily_pnl_usd: Decimal
     open_risk_usd: Decimal
     orders_today: int
+    market_open: bool
     observed_at: datetime
 
     def __post_init__(self) -> None:
@@ -96,6 +100,7 @@ class RiskLimits:
     max_daily_loss_usd: Decimal = Decimal("1000")
     max_open_risk_usd: Decimal = Decimal("1500")
     max_orders_per_day: int = 4
+    minimum_open_interest: int = 100
     min_days_to_expiry: int = 2
     max_days_to_expiry: int = 14
     max_bid_ask_spread_pct: Decimal = Decimal("0.15")
@@ -111,7 +116,11 @@ class RiskLimits:
         )
         if any(value <= 0 for value in decimals):
             raise ValueError("risk_limits_must_be_positive")
-        if self.max_orders_per_day <= 0 or self.min_days_to_expiry < 0:
+        if (
+            self.max_orders_per_day <= 0
+            or self.minimum_open_interest <= 0
+            or self.min_days_to_expiry < 0
+        ):
             raise ValueError("invalid_risk_limit_count")
         if self.max_days_to_expiry < self.min_days_to_expiry:
             raise ValueError("invalid_expiry_window")

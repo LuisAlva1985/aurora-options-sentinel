@@ -33,6 +33,7 @@ def main() -> None:
         ask=Decimal("3.90"),
         open_interest=1500,
         volume=800,
+        quote_observed_at=now,
     )
     account = PaperAccountState(
         environment="paper",
@@ -40,6 +41,7 @@ def main() -> None:
         daily_pnl_usd=Decimal("0"),
         open_risk_usd=Decimal("0"),
         orders_today=0,
+        market_open=True,
         observed_at=now,
     )
     decision = OptionsSentinel(RiskGate(RiskLimits())).decide(

@@ -158,14 +158,28 @@ def verify_competition_account(
     expected_account_number: str,
     expected_starting_cash_usd: Decimal = Decimal("100000"),
 ) -> VerifiedPaperAccount:
+    verified = verify_active_paper_account(
+        payload, expected_account_number=expected_account_number
+    )
+    if (
+        verified.cash_usd != expected_starting_cash_usd
+        or verified.portfolio_value_usd != expected_starting_cash_usd
+    ):
+        raise RuntimeError("competition_starting_balance_mismatch")
+    return verified
+
+
+def verify_active_paper_account(
+    payload: dict[str, object],
+    *,
+    expected_account_number: str,
+) -> VerifiedPaperAccount:
     if payload.get("account_number") != expected_account_number:
         raise RuntimeError("unexpected_paper_account")
     if payload.get("status") != "ACTIVE":
         raise RuntimeError("paper_account_not_active")
     cash = Decimal(str(payload.get("cash")))
     portfolio_value = Decimal(str(payload.get("portfolio_value")))
-    if cash != expected_starting_cash_usd or portfolio_value != expected_starting_cash_usd:
-        raise RuntimeError("competition_starting_balance_mismatch")
     if bool(payload.get("trading_blocked")) or bool(payload.get("account_blocked")):
         raise RuntimeError("paper_account_blocked")
     return VerifiedPaperAccount(

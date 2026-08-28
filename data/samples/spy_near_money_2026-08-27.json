@@ -1,0 +1,125 @@
+{
+  "captured_at": "2026-08-28T01:17:05.049575+00:00",
+  "market_open": false,
+  "options": {
+    "contract_multiplier": 100,
+    "expiration": "2026-09-04",
+    "feed": "indicative",
+    "prefilter_viable_count": 32,
+    "quoted_contract_count": 62,
+    "quotes": [
+      {
+        "ask": "4.85",
+        "bid": "4.84",
+        "open_interest": 1087,
+        "quote_timestamp": "2026-08-27T19:59:59.931492+00:00",
+        "right": "CALL",
+        "spread_pct": "0.00206398",
+        "strike": "772",
+        "symbol": "SPY260904C00772000"
+      },
+      {
+        "ask": "4.27",
+        "bid": "4.26",
+        "open_interest": 745,
+        "quote_timestamp": "2026-08-27T19:59:59.827634+00:00",
+        "right": "CALL",
+        "spread_pct": "0.00234467",
+        "strike": "773",
+        "symbol": "SPY260904C00773000"
+      },
+      {
+        "ask": "3.8",
+        "bid": "3.79",
+        "open_interest": 1283,
+        "quote_timestamp": "2026-08-27T19:59:59.490431+00:00",
+        "right": "CALL",
+        "spread_pct": "0.00263505",
+        "strike": "774",
+        "symbol": "SPY260904C00774000"
+      },
+      {
+        "ask": "3.28",
+        "bid": "3.22",
+        "open_interest": 3392,
+        "quote_timestamp": "2026-08-27T19:59:59.884951+00:00",
+        "right": "CALL",
+        "spread_pct": "0.01846154",
+        "strike": "775",
+        "symbol": "SPY260904C00775000"
+      },
+      {
+        "ask": "2.85",
+        "bid": "2.8",
+        "open_interest": 2024,
+        "quote_timestamp": "2026-08-27T19:59:59.945856+00:00",
+        "right": "CALL",
+        "spread_pct": "0.01769912",
+        "strike": "776",
+        "symbol": "SPY260904C00776000"
+      },
+      {
+        "ask": "4.46",
+        "bid": "4.45",
+        "open_interest": 1933,
+        "quote_timestamp": "2026-08-27T19:59:59.489138+00:00",
+        "right": "PUT",
+        "spread_pct": "0.00224467",
+        "strike": "771",
+        "symbol": "SPY260904P00771000"
+      },
+      {
+        "ask": "4.16",
+        "bid": "4.15",
+        "open_interest": 7359,
+        "quote_timestamp": "2026-08-27T19:59:59.554890+00:00",
+        "right": "PUT",
+        "spread_pct": "0.00240674",
+        "strike": "770",
+        "symbol": "SPY260904P00770000"
+      },
+      {
+        "ask": "4.97",
+        "bid": "4.86",
+        "open_interest": 939,
+        "quote_timestamp": "2026-08-27T19:59:59.728954+00:00",
+        "right": "PUT",
+        "spread_pct": "0.02238047",
+        "strike": "772",
+        "symbol": "SPY260904P00772000"
+      },
+      {
+        "ask": "3.73",
+        "bid": "3.72",
+        "open_interest": 491,
+        "quote_timestamp": "2026-08-27T19:59:59.813391+00:00",
+        "right": "PUT",
+        "spread_pct": "0.00268456",
+        "strike": "769",
+        "symbol": "SPY260904P00769000"
+      },
+      {
+        "ask": "3.4",
+        "bid": "3.38",
+        "open_interest": 819,
+        "quote_timestamp": "2026-08-27T19:59:59.375859+00:00",
+        "right": "PUT",
+        "spread_pct": "0.00589971",
+        "strike": "768",
+        "symbol": "SPY260904P00768000"
+      }
+    ]
+  },
+  "purpose": "read-only competition fixture; not a trading recommendation",
+  "schema_version": "aurora.market-sample.v1",
+  "source": "Alpaca Paper credentials",
+  "underlying": {
+    "ask": "770.27",
+    "bid": "769.86",
+    "feed": "iex",
+    "last_trade": "770.83",
+    "quote_timestamp": "2026-08-27T20:42:48.017478+00:00",
+    "spread_pct": "0.00053242",
+    "symbol": "SPY"
+  }
+}
